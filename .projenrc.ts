@@ -8,7 +8,7 @@ const project = new typescript.TypeScriptAppProject({
   name: 'git-operator',
   projenrcTs: true,
   packageManager: NodePackageManager.NPM,
-  deps: ['simple-git', 'openai', 'slackify-markdown', '@kubernetes/client-node'],
+  deps: ['simple-git', 'octokit', '@octokit/types', '@octokit/rest', 'openai', 'slackify-markdown', '@kubernetes/client-node'],
   devDeps: ['cdk8s-plus-30', 'cdk8s', 'constructs'],
 });
 

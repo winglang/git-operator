@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
-import { config } from './config';
-import { GitContent, reconcileGitContent } from './git';
+import { config } from './config.js';
+import { GitContent, reconcileGitContent } from './git.js';
 
 export type BindingContext = {
   watchEvent: 'Deleted' | 'Modified' | 'Added';

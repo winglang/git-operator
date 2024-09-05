@@ -75,6 +75,18 @@
       "type": "runtime"
     },
     {
+      "name": "@octokit/rest",
+      "type": "runtime"
+    },
+    {
+      "name": "@octokit/types",
+      "type": "runtime"
+    },
+    {
+      "name": "octokit",
+      "type": "runtime"
+    },
+    {
       "name": "openai",
       "type": "runtime"
     },

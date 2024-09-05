@@ -51,6 +51,34 @@ export const reconcileFile = (file: GitContent['files'][number], cloneResult: Cl
   }
 };
 
+export const createPR = async (owner: string, name: string, token: string) => {
+  const { Octokit } = await import('octokit');
+  const octokit = new Octokit({ auth: token });
+
+  const { data: existingPRs } = await octokit.rest.pulls.list({
+    owner,
+    repo: name,
+    state: 'open',
+  });
+
+  // check if there is a PR with head gitoperator
+  if (existingPRs.find((pr) => pr.head.ref === 'gitoperator')) {
+    console.error('PR already exists');
+    return;
+  }
+
+  // create a PR using octokit
+  console.error('creating PR');
+  await octokit.rest.pulls.create({
+    owner,
+    repo: name,
+    title: `Update ${name}`,
+    head: 'gitoperator',
+    base: 'main',
+    body: 'Update',
+  });
+};
+
 export const clone = async (owner: string, name: string, token: string) => {
   const gitUrl = `https://oauth2:${token}@github.com/${owner}/${name}.git`;
   const tempDir = mkdtempSync(join(tmpdir(), `git-${owner}-${name}-`));
@@ -62,6 +90,17 @@ export const clone = async (owner: string, name: string, token: string) => {
 export const reconcileGitContent = async (obj: GitContent, token: string) => {
   const cloneResult = await clone(obj.owner, obj.name, token);
 
+  // checkout the gitoperator branch if exists or create it
+  try {
+    console.error('checkout branch gitoperator');
+    await cloneResult.git.cwd(cloneResult.dir).checkout('gitoperator');
+    // merge main into gitoperator
+    await cloneResult.git.cwd(cloneResult.dir).merge(['main', '-m', 'Merge main into gitoperator']);
+  } catch (error) {
+    console.error('create branch gitoperator');
+    await cloneResult.git.cwd(cloneResult.dir).checkout('main', ['-b', 'gitoperator']);
+  }
+
   let updated = false;
   for (const file of obj.files) {
     updated = reconcileFile(file, cloneResult) || updated;
@@ -70,11 +109,13 @@ export const reconcileGitContent = async (obj: GitContent, token: string) => {
   if (updated) {
     console.error('pushing changes');
     await cloneResult.git
-      .cwd(cloneResult.dir)
       .addConfig('user.name', 'Wing Cloud Bot')
       .addConfig('user.email', 'bot@wing.cloud')
+      .cwd(cloneResult.dir)
       .add('.')
       .commit('update')
-      .push();
+      .push(['-u', 'origin', 'gitoperator', '--force']);
+
+    await createPR(obj.owner, obj.name, token);
   }
 };

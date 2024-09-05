@@ -284,13 +284,13 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/jest,cdk8s,cdk8s-plus-30,eslint-import-resolver-typescript,eslint-plugin-import,jest,projen,ts-jest,ts-node,typescript,@kubernetes/client-node,openai,simple-git,slackify-markdown"
+          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/jest,cdk8s,cdk8s-plus-30,eslint-import-resolver-typescript,eslint-plugin-import,jest,projen,ts-jest,ts-node,typescript,@kubernetes/client-node,@octokit/rest,@octokit/types,octokit,openai,simple-git,slackify-markdown"
         },
         {
           "exec": "npm install"
         },
         {
-          "exec": "npm update @types/jest @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser cdk8s cdk8s-plus-30 constructs eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit projen ts-jest ts-node typescript @kubernetes/client-node openai simple-git slackify-markdown"
+          "exec": "npm update @types/jest @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser cdk8s cdk8s-plus-30 constructs eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit projen ts-jest ts-node typescript @kubernetes/client-node @octokit/rest @octokit/types octokit openai simple-git slackify-markdown"
         },
         {
           "exec": "npx projen"
