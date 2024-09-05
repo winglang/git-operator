@@ -1,0 +1,12 @@
+apiVersion: wingcloud.com/v1
+kind: GitContent
+metadata:
+  name: my-git-content
+  namespace: git-operator
+name: eladb-111
+owner: eladcon
+files:
+  - path: README.md
+    readOnly: true
+    content: |
+      hiihhii
