@@ -26,6 +26,13 @@ jobs:
         run: npm install
       - name: build
         run: npx projen build
+        env:
+          SLACK_API_TOKEN: ${{ secrets.SLACK_API_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       - name: ls
         run: ls -la dist
       - name: Find mutations
