@@ -1,5 +1,5 @@
 import { typescript } from 'projen';
-import { NodePackageManager } from 'projen/lib/javascript';
+import { NodePackageManager, TypeScriptModuleResolution } from 'projen/lib/javascript';
 import * as chart from './projenrc/deploy';
 import { deployConfigMap, deploySecret } from './projenrc/secret';
 
@@ -10,6 +10,19 @@ const project = new typescript.TypeScriptAppProject({
   packageManager: NodePackageManager.NPM,
   deps: ['simple-git', 'octokit', '@octokit/types', '@octokit/rest', 'openai', 'slackify-markdown', '@kubernetes/client-node'],
   devDeps: ['cdk8s-plus-30', 'cdk8s', 'constructs'],
+  tsconfig: {
+    compilerOptions: {
+      lib: [
+        'es2021',
+      ],
+      module: 'Node16',
+      moduleResolution: TypeScriptModuleResolution.NODE16,
+      target: 'ES2021',
+    },
+    exclude: [
+      'node_modules',
+    ],
+  },
 });
 
 const namespace = 'git-operator';
