@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: build
-        run: npx projen build
+        run: npx projen
         env:
           SLACK_API_TOKEN: ${{ secrets.SLACK_API_TOKEN }}
           SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
