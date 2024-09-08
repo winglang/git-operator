@@ -23,6 +23,8 @@ jobs:
         run: npm install
       - name: build
         run: npx projen build
+      - name: ls
+        run: ls -la dist
       - name: Find mutations
         id: self_mutation
         run: |-
