@@ -2,8 +2,31 @@ import { accessSync, constants, mkdirSync, mkdtempSync, readFileSync, writeFileS
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { simpleGit, SimpleGit } from 'simple-git';
+import { exec } from './util.js';
 
-export interface GitContent {
+export type ApiObject = {
+  apiVersion: string;
+  kind: string;
+  status?: any;
+  metadata: {
+    name: string;
+    namespace?: string;
+    creationTimestamp?: string;
+    generation?: number;
+    resourceVersion?: string;
+
+    uid?: string;
+    annotations?: Record<string, string>;
+    labels?: Record<string, string>;
+    managedFields?: any[];
+  };
+};
+
+export interface RuntimeHost {
+  exec: typeof exec;
+};
+
+export interface GitContent extends ApiObject {
   name: string;
   owner: string;
   files: {
@@ -17,6 +40,35 @@ export interface CloneResult {
   git: SimpleGit;
   dir: string;
 }
+
+export async function patchStatus(obj: ApiObject, patch: any) {
+  try {
+    const namespace = obj.metadata.namespace ?? 'default';
+    const group = obj.apiVersion.split('/')[0];
+    const type = `${obj.kind.toLowerCase()}.${group}`;
+    await exec('kubectl', [
+      'patch',
+      type,
+      obj.metadata.name,
+      '-n', namespace,
+      '--type', 'merge',
+      '--subresource', 'status',
+      '--patch', JSON.stringify({ status: patch }),
+    ], { stdio: 'ignore' });
+  } catch (err) {
+    // just ignore errors
+  }
+}
+
+const updateReadyCondition = async (obj: ApiObject, ready: boolean, message: string) => patchStatus(obj, {
+  conditions: [{
+    type: 'Ready',
+    status: ready ? 'True' : 'False',
+    lastTransitionTime: new Date().toISOString(),
+    lastProbeTime: new Date().toISOString(),
+    message,
+  }],
+});
 
 export const reconcileFile = (file: GitContent['files'][number], cloneResult: CloneResult) => {
   console.error('reconciling file', file);
@@ -51,9 +103,13 @@ export const reconcileFile = (file: GitContent['files'][number], cloneResult: Cl
   }
 };
 
-export const createPR = async (owner: string, name: string, token: string) => {
+export const getOctokit = async (token: string) => {
   const { Octokit } = await import('octokit');
-  const octokit = new Octokit({ auth: token });
+  return new Octokit({ auth: token });
+};
+
+export const getPR = async (owner: string, name: string, token: string) => {
+  const octokit = await getOctokit(token);
 
   const { data: existingPRs } = await octokit.rest.pulls.list({
     owner,
@@ -63,6 +119,18 @@ export const createPR = async (owner: string, name: string, token: string) => {
 
   // check if there is a PR with head gitoperator
   if (existingPRs.find((pr) => pr.head.ref === 'gitoperator')) {
+    console.error('PR already exists');
+    return true;
+  }
+
+  return false;
+};
+
+export const createPR = async (owner: string, name: string, token: string) => {
+  const octokit = await getOctokit(token);
+
+  const prExists = await getPR(owner, name, token);
+  if (prExists) {
     console.error('PR already exists');
     return;
   }
@@ -117,5 +185,11 @@ export const reconcileGitContent = async (obj: GitContent, token: string) => {
       .push(['-u', 'origin', 'gitoperator', '--force']);
 
     await createPR(obj.owner, obj.name, token);
+    await updateReadyCondition(obj, true, 'In progress');
+  } else {
+    const prExists = await getPR(obj.owner, obj.name, token);
+    if (!prExists) {
+      await updateReadyCondition(obj, false, 'Synced');
+    }
   }
 };
