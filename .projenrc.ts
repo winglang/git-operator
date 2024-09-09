@@ -70,7 +70,7 @@ releaseWorkflow?.addJob('release', {
     },
     {
       name: 'Push helm chart',
-      run: 'helm push git-operator-0.0.1.tgz oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}',
+      run: 'helm push git-operator-*.tgz oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}',
     },
   ],
 });
