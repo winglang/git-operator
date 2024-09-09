@@ -129,7 +129,7 @@
       "name": "deploy-configmap-slack-config",
       "steps": [
         {
-          "exec": "kubectl create configmap slack-config -n git-operator --from-literal=SLACK_CHANNEL=git-operator-dev-eladcohen 2>/dev/null || true"
+          "exec": "kubectl create configmap slack-config -n git-operator --from-literal=SLACK_CHANNEL=git-operator-dev-${USER} 2>/dev/null || true"
         }
       ]
     },

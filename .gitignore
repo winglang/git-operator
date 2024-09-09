@@ -44,4 +44,5 @@ junit.xml
 /lib
 /dist/
 !/.eslintrc.json
+!/.github/workflows/release.yml
 !/.projenrc.ts

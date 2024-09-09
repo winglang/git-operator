@@ -1,4 +1,5 @@
 import { typescript } from 'projen';
+import { JobPermission } from 'projen/lib/github/workflows-model';
 import { NodePackageManager, TypeScriptModuleResolution } from 'projen/lib/javascript';
 import * as chart from './projenrc/deploy';
 import { deployConfigMap, deploySecret } from './projenrc/secret';
@@ -23,6 +24,55 @@ const project = new typescript.TypeScriptAppProject({
       'node_modules',
     ],
   },
+});
+
+const releaseWorkflow = project.github?.addWorkflow('release');
+releaseWorkflow?.on({
+  push: {
+    branches: ['main'],
+  },
+});
+
+releaseWorkflow?.addJob('release', {
+  runsOn: ['ubuntu-latest'],
+  permissions: {
+    contents: JobPermission.READ,
+  },
+  steps: [
+    {
+      name: 'Checkout',
+      uses: 'actions/checkout@v4',
+    },
+    {
+      name: 'Install dependencies',
+      run: 'npm ci',
+    },
+    {
+      name: 'Build',
+      run: 'npx projen',
+      env: {
+        SLACK_API_TOKEN: '${{ secrets.SLACK_API_TOKEN }}',
+        SLACK_CHANNEL: '${{ secrets.SLACK_CHANNEL }}',
+        GITHUB_TOKEN: '${{ secrets.GH_TOKEN }}',
+        AWS_SECRET_ACCESS_KEY: '${{ secrets.AWS_SECRET_ACCESS_KEY }}',
+        AWS_ACCESS_KEY_ID: '${{ secrets.AWS_ACCESS_KEY_ID }}',
+        OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}',
+      },
+    },
+    {
+      name: 'Login to helm registry',
+      run: 'echo "${{ secrets.DOCKER_PASSWORD }}" | helm registry login registry-1.docker.io --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin',
+      id: 'login',
+    },
+    {
+      name: 'Package helm chart',
+      run: 'helm package dist',
+    },
+    {
+      name: 'Push helm chart',
+      run: 'helm push git-operator-0.0.1.tgz oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}',
+    },
+  ],
 });
 
 const namespace = 'git-operator';
@@ -56,7 +106,7 @@ deployConfig.spawn(deployConfigMap(project, {
   namespace,
   configMapName: integrations.slack.configMap,
   map: {
-    [integrations.slack.channelKey]: `git-operator-dev-${process.env.USER}`,
+    [integrations.slack.channelKey]: 'git-operator-dev-${USER}',
   },
 }));
 
